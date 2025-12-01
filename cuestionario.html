@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario Interactivo Moderno v4</title>
+    <style>
+        /* Variables de Diseño (Estilo Moderno/Tailwind-like) */
+        :root {
+            --primary-500: #4f46e5; /* Indigo */
+            --primary-700: #4338ca; 
+            --accent-500: #f472b6; /* Pink/Rose */
+            --accent-700: #db2777;
+            --success-500: #10b981; /* Emerald Green */
+            --error-500: #ef4444; /* Red */
+            --warning-500: #f59e0b; /* Amber */
+            --bg-gray-100: #f3f4f6;
+            --bg-white: #ffffff;
+            --text-gray-900: #1f2937;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            background-color: var(--bg-gray-100);
+            color: var(--text-gray-900);
+        }
+
+        /* --- Estructura Principal --- */
+        .header-bar {
+            background-color: var(--primary-700);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+        }
+        .main-content {
+            display: flex;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: auto;
+            gap: 1.5rem;
+        }
+
+        /* --- Barra Lateral Fija (Sidebar) --- */
+        .sidebar-fixed {
+            width: 300px;
+            height: fit-content;
+            position: sticky;
+            top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg-white);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+        }
+        .sidebar-fixed h2 {
+            margin-top: 0;
+            color: var(--primary-500);
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        /* Timer Display */
+        #timer-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-500);
+            margin: 1rem 0 1.5rem 0;
+            padding: 0.5rem;
+            border: 2px dashed var(--accent-500);
+            border-radius: 0.375rem;
+            letter-spacing: 2px;
+        }
+        /* Contadores de Puntuación */
+        .score-item {
+            font-size: 1.125rem;
+            font-weight: 600;
+            padding: 0.5rem 0;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .score-item:first-child { border-top: none; }
+        .score-value { font-size: 1.5rem; font-weight: 700; }
+        #correct-count { color: var(--success-500); }
+        #incorrect-count { color: var(--error-500); }
+        #approval-rate { 
+            font-size: 1.5rem; 
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #eef2ff;
+            border-radius: 0.25rem;
+        }
+        #approval-rate .score-value { font-size: 1.8rem; }
+
+        /* --- Contenedor de Carga --- */
+        #quiz-input-container {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+        }
+        #quiz-input-container textarea {
+            width: 98%;
+            min-height: 120px;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-family: monospace;
+            margin-bottom: 1rem;
+        }
+        #timer-controls {
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        #timer-controls button, #load-quiz-button {
+            padding: 0.6rem 1rem;
+            background-color: var(--primary-500);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #timer-controls button:hover, #load-quiz-button:hover {
+            background-color: var(--primary-700);
+        }
+        #load-quiz-button {
+            background-color: var(--success-500);
+        }
+        #load-quiz-button:hover {
+            background-color: #059669;
+        }
+
+        /* --- Estilos de Pregunta (Modernos) --- */
+        .question-block {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg-white);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+        .question-block h3 {
+            margin-top: 0;
+            color: var(--primary-500);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Opciones de Respuesta (Estilo de Tarjeta/Botón) */
+        .options label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .options label:hover {
+            background-color: #f9fafb;
+            border-color: var(--primary-500);
+        }
+        
+        /* SOLUCIÓN: OCULTAR COMPLETAMENTE EL INPUT NATIVO */
+        .options input[type="radio"], .options input[type="checkbox"] {
+            /* Oculta el input real, incluyendo su apariencia nativa */
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        
+        /* El texto de la opción debe ser un span para aplicar el ::before */
+        .options label span {
+             display: flex;
+             align-items: center;
+             width: 100%;
+        }
+        /* Indicador customizado (Círculo/Cuadrado que se ve) */
+        .options label span::before {
+            content: '';
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 10px;
+            border: 2px solid #9ca3af; /* Gris por defecto */
+            background-color: var(--bg-white);
+            border-radius: 50%; /* Círculo para Radio */
+            transition: all 0.2s;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .options input[type="checkbox"] + span::before {
+             border-radius: 0.25rem; /* Cuadrado para Checkbox */
+        }
+
+        /* Estilo al seleccionar el radio button */
+        .options input[type="radio"]:checked + span::before {
+            background-color: var(--primary-500);
+            border-color: var(--primary-500);
+            box-shadow: inset 0 0 0 5px var(--bg-white); /* Punto central blanco */
+        }
+        /* Estilo al seleccionar el checkbox */
+        .options input[type="checkbox"]:checked + span::before {
+            background-color: var(--primary-500);
+            border-color: var(--primary-500);
+            content: '✓'; 
+            color: var(--bg-white);
+            font-size: 0.9rem;
+            line-height: 1.25rem;
+            text-align: center;
+        }
+        
+        /* Estilo de la etiqueta de la opción al seleccionarla */
+        .options input:checked + span {
+             background-color: #eef2ff; /* Fondo más claro al seleccionar */
+             font-weight: 500;
+             border-color: var(--primary-500);
+        }
+        
+        /* --- Botón de Evaluación --- */
+        .check-button {
+            padding: 0.6rem 1.5rem;
+            background-color: var(--accent-500);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .check-button:hover {
+            background-color: var(--accent-700);
+        }
+        .check-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- Feedback y Colores de Resultado --- */
+        .feedback {
+            margin-top: 1rem;
+            font-weight: 600;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1rem;
+        }
+        .correct-answer {
+            border-left: 5px solid var(--success-500);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+        .incorrect-answer {
+            border-left: 5px solid var(--error-500);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        }
+        .option-correct {
+            background-color: #d1fae5 !important;
+            border-color: var(--success-500) !important;
+        }
+        .option-incorrect {
+            background-color: #fee2e2 !important;
+            border-color: var(--error-500) !important;
+        }
+        
+        /* --- Bloque de Resultados Finales --- */
+        #final-results {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg-white);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            border: 2px solid var(--warning-500);
+            display: none;
+        }
+        #final-results h3 {
+            color: var(--warning-500);
+            font-size: 1.5rem;
+        }
+        #final-results div {
+            margin: 0.75rem 0;
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>Cuestionario de Práctica 🧠</h1>
+    </div>
+
+    <div class="main-content">
+        <div id="quiz-content-wrapper" style="flex-grow: 1;">
+
+            <div id="quiz-input-container">
+                <label id="file-label" for="quiz-file-input">Selecciona el archivo del cuestionario (.md):</label>
+                <input type="file" id="quiz-file-input" accept=".md, .markdown" onchange="loadQuizFromFile()" style="margin-bottom: 1rem;">
+                
+                <p style="font-weight: 600; margin-bottom: 5px;">Selecciona el tiempo de examen:</p>
+                <div id="timer-controls">
+                    <button onclick="startTimer(30)" id="btn-30">30 min</button>
+                    <button onclick="startTimer(60)" id="btn-60">60 min</button>
+                    <button onclick="startTimer(90)" id="btn-90">90 min</button>
+                    
+                    <button onclick="loadQuizFromFile()" id="load-quiz-button" style="background-color: var(--success-500);">Cargar Cuestionario</button>
+                </div>
+            </div>
+
+            <div id="quiz-content">
+                <p style="text-align: center; color: #666;">Carga un cuestionario para empezar. ¡Buena suerte!</p>
+            </div>
+            
+            <div id="final-results">
+                <h3>Resultados Finales del Cuestionario 🎉</h3>
+                <div id="total-result"></div>
+                <div id="correct-result" style="color: var(--success-500);"></div>
+                <div id="incorrect-result" style="color: var(--error-500);"></div>
+            </div>
+        </div>
+
+        <div class="sidebar-fixed">
+            <h2>Tiempo Restante ⏳</h2>
+            <div id="timer-display">
+                --:--
+            </div>
+
+            <h2>Estadísticas</h2>
+            <div class="score-item">
+                Total Preguntas: <span id="total-questions" class="score-value">0</span>
+            </div>
+            <div class="score-item" id="correct-count">
+                Correctas: <span id="score" class="score-value">0</span>
+            </div>
+            <div class="score-item" id="incorrect-count">
+                Incorrectas: <span id="incorrect-score" class="score-value">0</span>
+            </div>
+
+            <div id="approval-rate">
+                Aprobación: <span id="percentage-score" class="score-value">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Carga de texto por defecto para demostración
+
+        let questionsData = [];
+        let currentScore = 0;
+        let currentIncorrect = 0; // NUEVO: Contador de respuestas incorrectas
+        let answeredQuestionsCount = 0;
+        let totalQuestions = 0;
+        let timerInterval = null;
+        let timeRemainingSeconds = 0;
+
+        // --- NUEVA Lógica de Carga de Archivo ---
+        function loadQuizFromFile() {
+            const fileInput = document.getElementById('quiz-file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Por favor, selecciona un archivo Markdown (.md) para cargar.");
+                return;
+            }
+            
+            if (file.size > 1024 * 1024 * 5) { // Límite de 5MB por seguridad
+                alert("El archivo es demasiado grande. Máximo 5MB.");
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                const quizText = event.target.result;
+                
+                // Resetear estados y cargar
+                currentScore = 0;
+                currentIncorrect = 0;
+                answeredQuestionsCount = 0;
+                document.getElementById('final-results').style.display = 'none'; 
+                
+                loadQuiz(quizText);
+                updateScoreDisplay();
+                
+                if (!timerInterval) {
+                     //alert("Cuestionario cargado correctamente. Selecciona un tiempo para comenzar el temporizador.");
+                }
+            };
+
+            reader.onerror = () => {
+                alert("Error al leer el archivo.");
+            };
+
+            reader.readAsText(file);
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTimerDisplay();
+            updateScoreDisplay(); // Actualiza el display de score/incorrectas/porcentaje inicial
+        });
+        
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = currentScore;
+            document.getElementById('incorrect-score').textContent = currentIncorrect;
+            
+            let percentage = 0;
+            if (answeredQuestionsCount > 0) {
+                percentage = Math.round((currentScore / answeredQuestionsCount) * 100);
+            }
+            document.getElementById('percentage-score').textContent = `${percentage}%`;
+        }
+
+        // --- Lógica del Temporizador (SIN CAMBIOS) ---
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemainingSeconds / 60);
+            const seconds = timeRemainingSeconds % 60;
+            const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('timer-display').textContent = display;
+
+            if (timeRemainingSeconds <= 60) {
+                 document.getElementById('timer-display').style.color = 'var(--error-500)';
+            } else {
+                document.getElementById('timer-display').style.color = 'var(--accent-500)';
+            }
+        }
+
+        function startTimer(minutes) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            timeRemainingSeconds = minutes * 60;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeRemainingSeconds--;
+                updateTimerDisplay();
+
+                if (timeRemainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    alert("¡Tiempo Agotado! ⏱️ El examen ha finalizado.");
+                    document.querySelectorAll('.check-button').forEach(btn => btn.disabled = true);
+                    showFinalResults(); 
+                }
+            }, 1000);
+            
+            if (answeredQuestionsCount === totalQuestions && totalQuestions > 0) {
+                 showFinalResults();
+            }
+            //alert(`Temporizador iniciado: ${minutes} minutos.`);
+        }
+
+        // --- Lógica de Carga y Parseo (PARSER SIN CAMBIOS) ---
+        function loadQuizFromTextarea() {
+            const quizText = document.getElementById('quiz-raw-text').value;
+            if (quizText.trim() === "") {
+                alert("Por favor, pega el texto del cuestionario.");
+                return;
+            }
+            // Resetear estados
+            currentScore = 0;
+            currentIncorrect = 0; // Resetear incorrectas
+            answeredQuestionsCount = 0;
+            document.getElementById('final-results').style.display = 'none'; 
+            
+            loadQuiz(quizText);
+            updateScoreDisplay(); // Actualiza el display después de cargar preguntas
+            
+            if (!timerInterval) {
+                 alert("Cuestionario cargado. Selecciona un tiempo (30, 60 o 90 min) para comenzar el temporizador.");
+            }
+        }
+
+        function parseQuizText(quizText) {
+            const lines = quizText.split('\n');
+            const questions = [];
+            let currentQuestion = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                const questionMatch = line.match(/^(\d+)\.\s*(.*)/);
+                if (questionMatch) {
+                    if (currentQuestion && currentQuestion.options.length > 0) {
+                        questions.push(currentQuestion);
+                    }
+                    currentQuestion = {
+                        id: parseInt(questionMatch[1]),
+                        text: questionMatch[2],
+                        options: [],
+                        correctAnswers: [],
+                        isMultipleChoice: questionMatch[2].toLowerCase().includes('(choose two)') ||
+                                          questionMatch[2].toLowerCase().includes('(choose 2)') ||
+                                          questionMatch[2].toLowerCase().includes('(escoge dos)'),
+                        isAnswered: false, 
+                        isCorrect: false 
+                    };
+                    return;
+                }
+
+                if (currentQuestion) {
+                    const optionMatch = line.match(/^\s*-\s*([A-Z])\.(.*)/);
+                    if (optionMatch) {
+                        currentQuestion.options.push({
+                            value: optionMatch[1],
+                            text: optionMatch[2].trim()
+                        });
+                        return;
+                    }
+                    const answerMatch = line.match(/Correct answer:\s*([A-Z,\s]+)/i);
+                    if (answerMatch) {
+                        currentQuestion.correctAnswers = answerMatch[1].split(',').map(ans => ans.trim());
+                        if (currentQuestion.correctAnswers.length > 1) {
+                            currentQuestion.isMultipleChoice = true;
+                        }
+                    }
+                }
+            });
+
+            if (currentQuestion) {
+                questions.push(currentQuestion);
+            }
+            return questions;
+        }
+
+        function renderQuiz(questions) {
+            const quizContentDiv = document.getElementById('quiz-content');
+            quizContentDiv.innerHTML = '';
+            totalQuestions = questions.length;
+            document.getElementById('total-questions').textContent = totalQuestions;
+
+            questions.forEach(q => {
+                const questionBlock = document.createElement('div');
+                questionBlock.className = 'question-block';
+                questionBlock.id = `question-${q.id}`;
+
+                const questionTitle = document.createElement('h3');
+                questionTitle.textContent = `Pregunta ${q.id}`;
+                questionBlock.appendChild(questionTitle);
+
+                const questionTextP = document.createElement('p');
+                questionTextP.textContent = q.text;
+                questionBlock.appendChild(questionTextP);
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'options';
+
+                const inputType = q.isMultipleChoice ? 'checkbox' : 'radio';
+
+                q.options.forEach(opt => {
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = inputType;
+                    input.name = `question-${q.id}`;
+                    input.value = opt.value;
+
+                    label.appendChild(input);
+                    
+                    const optionSpan = document.createElement('span');
+                    optionSpan.textContent = `${opt.value}. ${opt.text}`;
+                    label.appendChild(optionSpan);
+
+                    optionsDiv.appendChild(label);
+                });
+                questionBlock.appendChild(optionsDiv);
+
+                const checkButton = document.createElement('button');
+                checkButton.className = 'check-button';
+                checkButton.textContent = 'Evaluar Respuesta';
+                checkButton.dataset.questionId = q.id;
+                checkButton.addEventListener('click', () => checkAnswer(q.id));
+                questionBlock.appendChild(checkButton);
+
+                const feedbackP = document.createElement('p');
+                feedbackP.className = 'feedback';
+                questionBlock.appendChild(feedbackP);
+
+                quizContentDiv.appendChild(questionBlock);
+            });
+        }
+
+        // --- Lógica de Evaluación ---
+        function checkAnswer(questionId) {
+            const questionIndex = questionsData.findIndex(q => q.id === questionId);
+            const question = questionsData[questionIndex];
+            if (!question || question.isAnswered) return;
+
+            const questionBlock = document.getElementById(`question-${questionId}`);
+            const feedbackP = questionBlock.querySelector('.feedback');
+            const checkButton = questionBlock.querySelector('.check-button');
+            const inputs = questionBlock.querySelectorAll('.options input');
+
+            let selectedAnswers = [];
+            inputs.forEach(input => {
+                if (input.checked) {
+                    selectedAnswers.push(input.value);
+                }
+            });
+
+            if (selectedAnswers.length === 0) {
+                feedbackP.textContent = "Por favor, selecciona una opción.";
+                feedbackP.style.color = "var(--warning-500)";
+                return;
+            }
+
+            // Deshabilitar elementos
+            inputs.forEach(input => input.disabled = true);
+            checkButton.disabled = true;
+
+            // Comparar respuestas
+            const correctSet = new Set(question.correctAnswers);
+            const selectedSet = new Set(selectedAnswers);
+
+            let isCorrect = (correctSet.size === selectedSet.size) &&
+                        [...selectedSet].every(ans => correctSet.has(ans));
+            
+            question.isAnswered = true;
+            answeredQuestionsCount++;
+
+            // Contadores
+            if (isCorrect) {
+                currentScore++;
+                question.isCorrect = true;
+            } else {
+                currentIncorrect++; // Aumenta el contador de incorrectas
+                question.isCorrect = false;
+            }
+            
+            // Resaltar opciones 
+            inputs.forEach(input => {
+                const label = input.parentNode;
+                const isUserSelected = selectedSet.has(input.value);
+                const isActualCorrect = correctSet.has(input.value);
+                
+                if (isActualCorrect) {
+                    label.classList.add('option-correct');
+                }
+                if (isUserSelected && !isActualCorrect) {
+                     label.classList.add('option-incorrect');
+                }
+            });
+
+
+            if (isCorrect) {
+                questionBlock.classList.add('correct-answer');
+                feedbackP.textContent = "¡Respuesta Correcta! ✅";
+                feedbackP.style.color = "var(--success-500)";
+            } else {
+                questionBlock.classList.add('incorrect-answer');
+                feedbackP.textContent = `Respuesta Incorrecta. ❌ La(s) respuesta(s) correcta(s) era(n): ${question.correctAnswers.join(', ')}.`;
+                feedbackP.style.color = "var(--error-500)";
+            }
+
+            updateScoreDisplay(); // Llama a actualizar todos los contadores
+            
+            if (answeredQuestionsCount === totalQuestions) {
+                showFinalResults();
+            }
+        }
+
+        function loadQuiz(quizText) {
+            questionsData = parseQuizText(quizText);
+            totalQuestions = questionsData.length;
+            if (totalQuestions === 0 && quizText.trim() !== "") {
+                 const quizContentDiv = document.getElementById('quiz-content');
+                 quizContentDiv.innerHTML = '<p style="text-align: center; color: var(--error-500); font-weight: bold;">Error: No se pudieron cargar preguntas. Verifica el formato del texto.</p>';
+                 document.getElementById('total-questions').textContent = 0;
+                 return;
+            }
+            renderQuiz(questionsData);
+        }
+
+        // --- Lógica de Resultados Finales ---
+        function showFinalResults() {
+            const resultsDiv = document.getElementById('final-results');
+            
+            document.getElementById('total-result').innerHTML = `Total de preguntas: <b>${totalQuestions}</b>`;
+            document.getElementById('correct-result').innerHTML = `Correctas: <b>${currentScore}</b> ✅`;
+            document.getElementById('incorrect-result').innerHTML = `Incorrectas: <b>${currentIncorrect}</b> ❌`;
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+
+</body>
+</html>
