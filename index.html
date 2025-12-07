@@ -194,6 +194,27 @@
         .btn-action:hover { background-color: var(--primary-dark); }
         .btn-check { background-color: var(--secondary); color: white; }
         .btn-check:hover { background-color: #db2777; }
+        
+        /* Botón de Auto-avance */
+        .btn-auto-advancing {
+            background: linear-gradient(90deg, var(--primary) 0%, #6366f1 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        /* Animación sutil de carga */
+        .btn-auto-advancing::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.5);
+            width: 100%;
+            animation: shrink 5s linear forwards;
+        }
+        @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
 
         /* --- Resultados Finales --- */
         .stats-grid {
@@ -206,7 +227,6 @@
         .stat-box h3 { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
         .stat-box p { margin: 0.5rem 0 0 0; font-size: 2rem; font-weight: 700; color: var(--text-main); }
         
-        /* Tarjeta de Análisis (Estilo oscuro/moderno) */
         .improvement-card {
             background-color: #111827; /* Dark */
             color: white;
@@ -235,7 +255,6 @@
         }
         .btn-analyze:hover { background-color: #0284c7; }
 
-        /* Botones Finales */
         .final-actions {
             display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;
         }
@@ -361,6 +380,10 @@
         let timerInterval = null;
         let timeRemainingSeconds = 0;
         
+        // Auto-advance variables
+        let autoAdvanceTimer = null;
+        let countdownInterval = null;
+        
         let currentScore = 0;
         let currentIncorrect = 0;
         let answeredCount = 0;
@@ -430,8 +453,19 @@
             showQuestion(0);
         }
 
+        // --- CANCELAR AUTO-AVANCE ---
+        function cancelAutoAdvance() {
+            if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+            if (countdownInterval) clearInterval(countdownInterval);
+            autoAdvanceTimer = null;
+            countdownInterval = null;
+        }
+
         // --- RENDERIZAR PREGUNTA ---
         function showQuestion(index) {
+            // Cancelar cualquier timer pendiente al cambiar de pregunta
+            cancelAutoAdvance();
+
             const q = questionsData[index];
             const container = document.getElementById('quiz-content');
             container.innerHTML = '';
@@ -503,6 +537,7 @@
             } else { navDiv.appendChild(document.createElement('div')); }
 
             const nextBtn = document.createElement('button');
+            nextBtn.id = 'btn-next-action'; // ID para manipularlo luego
             nextBtn.className = 'btn-nav';
             
             if (q.isAnswered || isReviewMode) {
@@ -545,12 +580,41 @@
             if (isCorrect) currentScore++; else currentIncorrect++;
 
             updateHeaderStats();
+            
+            // Re-renderizar para mostrar feedback y botones
             showQuestion(index);
             
+            // Chequear si terminó el examen
             if (answeredCount === questionsData.length) clearInterval(timerInterval);
+
+            // --- LÓGICA DE AUTO-AVANCE ---
+            // Solo si NO es modo revisión y NO es la última pregunta
+            if (!isReviewMode && index < questionsData.length - 1) {
+                const nextBtn = document.getElementById('btn-next-action');
+                if (nextBtn) {
+                    nextBtn.classList.add('btn-auto-advancing');
+                    let timeLeft = 5;
+                    nextBtn.textContent = `Siguiente (${timeLeft}s)...`;
+
+                    // Intervalo para actualizar texto
+                    countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        if (timeLeft > 0) {
+                            nextBtn.textContent = `Siguiente (${timeLeft}s)...`;
+                        } else {
+                            clearInterval(countdownInterval);
+                        }
+                    }, 1000);
+
+                    // Timeout para avanzar
+                    autoAdvanceTimer = setTimeout(() => {
+                        showQuestion(index + 1);
+                    }, 5000);
+                }
+            }
         }
 
-        // --- ANALIZAR RENDIMIENTO (FUNCIONALIDAD RESTAURADA) ---
+        // --- ANALIZAR RENDIMIENTO ---
         function analyzePerformance() {
             const incorrectQuestions = questionsData.filter(q => q.isAnswered && !q.isCorrect);
             
@@ -609,6 +673,7 @@
 
         function showFinalResults() {
             clearInterval(timerInterval);
+            cancelAutoAdvance(); // Asegurar que no salte nada
             document.getElementById('quiz-content').style.display = 'none';
             document.getElementById('final-results-screen').style.display = 'block';
 
